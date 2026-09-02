@@ -31,12 +31,13 @@ struct SampleDataLoader {
                 price: 17.99,
                 currency: "£",
                 billingFrequency: .monthly,
-                startDate: calendar.date(byAdding: .month, value: -6, to: referenceDate),
+                startDate: calendar.date(byAdding: .month, value: -8, to: referenceDate),
                 nextRenewalDate: netflixRenewal,
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7, 3, 1],
-                notes: "Family plan"
+                notes: "Family plan",
+                managementUrl: "https://www.netflix.com/youraccount"
             ),
             SubscriptionModel(
                 name: "Spotify",
@@ -53,10 +54,11 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "Individual Premium"
+                notes: "Individual Premium",
+                managementUrl: "https://www.spotify.com/account"
             ),
             SubscriptionModel(
-                name: "iCloud",
+                name: "iCloud+",
                 iconAssetName: "iCloud",
                 sfSymbolName: "icloud.fill",
                 brandColorHex: "3388FF",
@@ -70,7 +72,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "200 GB Storage"
+                notes: "200 GB Storage",
+                managementUrl: "https://support.apple.com/HT202039"
             ),
             SubscriptionModel(
                 name: "Disney+",
@@ -87,7 +90,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "Standard with Ads"
+                notes: "Standard with Ads",
+                managementUrl: "https://www.disneyplus.com/account"
             ),
             SubscriptionModel(
                 name: "Amazon Prime Video",
@@ -104,7 +108,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "Monthly video streaming"
+                notes: "Monthly video streaming",
+                managementUrl: "https://www.amazon.com/mc/manage"
             ),
             SubscriptionModel(
                 name: "Duolingo Plus",
@@ -121,7 +126,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "Spanish learning"
+                notes: "Spanish learning",
+                managementUrl: "https://www.duolingo.com/settings/super"
             ),
             SubscriptionModel(
                 name: "Dropbox Plus",
@@ -138,7 +144,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .active,
                 reminderDays: [7],
-                notes: "Backup drive"
+                notes: "Backup drive",
+                managementUrl: "https://www.dropbox.com/account/plan"
             ),
             SubscriptionModel(
                 name: "YouTube Premium",
@@ -155,7 +162,8 @@ struct SampleDataLoader {
                 hasUnknownRenewalDate: false,
                 status: .paused,
                 reminderDays: [7],
-                notes: "Paused for summer"
+                notes: "Paused for summer",
+                managementUrl: "https://www.youtube.com/paid_memberships"
             ),
             SubscriptionModel(
                 name: "Canva",
@@ -174,7 +182,8 @@ struct SampleDataLoader {
                 priceAfterTrial: 12.99,
                 status: .active,
                 reminderDays: [7, 1],
-                notes: "Pro 14-day free trial"
+                notes: "Pro 14-day free trial",
+                managementUrl: "https://www.canva.com/settings/billing-and-teams"
             )
         ]
     }

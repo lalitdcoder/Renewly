@@ -28,6 +28,8 @@ final class SubscriptionModel: Identifiable {
     var reminderDaysString: String
     var reminderTime: Date
     var notes: String
+    var managementUrl: String?
+    var lastReviewedAt: Date?
     var createdAt: Date
     var updatedAt: Date
     
@@ -51,6 +53,8 @@ final class SubscriptionModel: Identifiable {
         reminderDays: [Int] = [7],
         reminderTime: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date(),
         notes: String = "",
+        managementUrl: String? = nil,
+        lastReviewedAt: Date? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -88,6 +92,8 @@ final class SubscriptionModel: Identifiable {
         self.reminderDaysString = reminderDays.map(String.init).joined(separator: ",")
         self.reminderTime = reminderTime
         self.notes = notes
+        self.managementUrl = managementUrl
+        self.lastReviewedAt = lastReviewedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -96,6 +102,18 @@ final class SubscriptionModel: Identifiable {
     var category: SubscriptionCategory {
         get { SubscriptionCategory(rawValue: categoryRaw) ?? .other }
         set { categoryRaw = newValue.rawValue }
+    }
+    
+    var categoryDisplayName: String {
+        categoryRaw
+    }
+    
+    var categoryIconName: String {
+        CategoryManager.shared.iconName(for: categoryRaw)
+    }
+    
+    var categoryColor: Color {
+        CategoryManager.shared.color(for: categoryRaw)
     }
     
     var type: SubscriptionType {
@@ -198,6 +216,21 @@ final class SubscriptionModel: Identifiable {
         }
     }
     
+    func radarCountdownText(from referenceDate: Date = Date()) -> String {
+        guard let days = daysUntilRenewal(from: referenceDate) else {
+            return "Date not set"
+        }
+        if days < 0 {
+            return "Overdue"
+        } else if days == 0 {
+            return "Today"
+        } else if days == 1 {
+            return "Tomorrow"
+        } else {
+            return "\(days) days"
+        }
+    }
+    
     func formattedPriceAndFrequency() -> String {
         if type == .trial {
             if let postPrice = priceAfterTrial, postPrice > 0 {
@@ -219,14 +252,14 @@ final class SubscriptionModel: Identifiable {
         case .active:
             if type == .trial {
                 if let days = daysUntilRenewal(from: referenceDate) {
-                    if days == 0 {
+                    if days < 0 {
+                        return "Trial ended"
+                    } else if days == 0 {
                         return "Trial ends today"
                     } else if days == 1 {
                         return "Trial ends tomorrow"
-                    } else if days > 1 {
-                        return "Trial ends in \(days) days"
                     } else {
-                        return "Trial ended"
+                        return "Trial ends in \(days) days"
                     }
                 }
                 return "Trial active"
@@ -237,18 +270,18 @@ final class SubscriptionModel: Identifiable {
             }
             
             if let days = daysUntilRenewal(from: referenceDate) {
-                if days == 0 {
+                if days < 0 {
+                    return "Overdue"
+                } else if days == 0 {
                     return "Renews today"
                 } else if days == 1 {
                     return "Renews tomorrow"
                 } else if days > 1 && days <= 30 {
                     return "Renews in \(days) days"
-                } else if days > 30 {
+                } else {
                     let formatter = DateFormatter()
                     formatter.dateFormat = "MMM d"
                     return "Renews " + formatter.string(from: nextRenewalDate ?? referenceDate)
-                } else {
-                    return "Renewed recently"
                 }
             }
             return "Active"
@@ -261,5 +294,30 @@ final class SubscriptionModel: Identifiable {
             return true
         }
         return false
+    }
+    
+    // Tracking duration for review reminders
+    func trackingDurationInMonths(from referenceDate: Date = Date()) -> Int {
+        let start = startDate ?? createdAt
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.month], from: start, to: referenceDate)
+        return max(1, components.month ?? 1)
+    }
+    
+    func shouldPromptForReview(from referenceDate: Date = Date()) -> Bool {
+        guard status == .active && type == .subscription else { return false }
+        let months = trackingDurationInMonths(from: referenceDate)
+        guard months >= 6 else { return false }
+        
+        if let lastReviewed = lastReviewedAt {
+            let daysSinceReview = Calendar.current.dateComponents([.day], from: lastReviewed, to: referenceDate).day ?? 0
+            return daysSinceReview >= 90
+        }
+        return true
+    }
+    
+    func snoozeReview() {
+        lastReviewedAt = Date()
+        updatedAt = Date()
     }
 }

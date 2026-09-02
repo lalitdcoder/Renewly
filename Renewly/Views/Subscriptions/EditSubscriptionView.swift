@@ -16,13 +16,16 @@ struct EditSubscriptionView: View {
     @State private var priceString: String = ""
     @State private var currency: String = "£"
     @State private var billingFrequency: BillingFrequency = .monthly
-    @State private var category: SubscriptionCategory = .entertainment
+    @State private var selectedCategoryName: String = "Entertainment"
     @State private var renewalDate: Date = Date()
     @State private var hasUnknownRenewalDate: Bool = false
-    @State private var reminderOption: ReminderOption = .sevenDays
-    @State private var customDays: Int = 7
+    @State private var reminderDaysSelection: [Int] = [7]
     @State private var notes: String = ""
+    @State private var managementUrlString: String = ""
+    @State private var priceAfterTrialString: String = ""
     @State private var status: SubscriptionStatus = .active
+    
+    private let availableReminderDays = [14, 7, 3, 1, 0]
     
     var body: some View {
         NavigationStack {
@@ -30,26 +33,43 @@ struct EditSubscriptionView: View {
                 Section("Details") {
                     TextField("Name", text: $name)
                     
-                    HStack {
-                        Text("Price")
-                        Spacer()
-                        Text(currency)
-                            .foregroundColor(.renewlyTextSecondary)
-                        TextField("0.00", text: $priceString)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(maxWidth: 90)
+                    if subscription.type == .subscription {
+                        HStack {
+                            Text("Price")
+                            Spacer()
+                            Text(currency)
+                                .foregroundColor(.renewlyTextSecondary)
+                            TextField("0.00", text: $priceString)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 90)
+                        }
+                        
+                        Picker("Billing Frequency", selection: $billingFrequency) {
+                            Text("Monthly").tag(BillingFrequency.monthly)
+                            Text("Yearly").tag(BillingFrequency.yearly)
+                            Text("Weekly").tag(BillingFrequency.weekly)
+                        }
+                    } else {
+                        HStack {
+                            Text("Cost Afterwards")
+                            Spacer()
+                            Text(currency)
+                                .foregroundColor(.renewlyTextSecondary)
+                            TextField("0.00", text: $priceAfterTrialString)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 90)
+                        }
                     }
                     
-                    Picker("Billing Frequency", selection: $billingFrequency) {
-                        Text("Monthly").tag(BillingFrequency.monthly)
-                        Text("Yearly").tag(BillingFrequency.yearly)
-                        Text("Weekly").tag(BillingFrequency.weekly)
-                    }
-                    
-                    Picker("Category", selection: $category) {
-                        ForEach(SubscriptionCategory.allCases, id: \.self) { cat in
-                            Text(cat.rawValue).tag(cat)
+                    Picker("Category", selection: $selectedCategoryName) {
+                        ForEach(CategoryManager.shared.allCategories) { cat in
+                            HStack {
+                                Image(systemName: cat.sfSymbolName)
+                                Text(cat.name)
+                            }
+                            .tag(cat.name)
                         }
                     }
                     
@@ -60,33 +80,51 @@ struct EditSubscriptionView: View {
                     }
                 }
                 
-                Section("Renewal Date") {
-                    Toggle("I don't know renewal date", isOn: $hasUnknownRenewalDate)
+                Section(subscription.type == .trial ? "Trial End Date" : "Renewal Date") {
+                    Toggle("I don't know the exact date", isOn: $hasUnknownRenewalDate)
                     
                     if !hasUnknownRenewalDate {
-                        DatePicker("Next Renewal", selection: $renewalDate, displayedComponents: [.date])
+                        DatePicker(subscription.type == .trial ? "Trial Ends" : "Next Renewal", selection: $renewalDate, displayedComponents: [.date])
                     }
                 }
                 
                 Section("Reminders") {
-                    Picker("Remind me", selection: $reminderOption) {
-                        Text("7 days before").tag(ReminderOption.sevenDays)
-                        Text("3 days before").tag(ReminderOption.threeDays)
-                        Text("1 day before").tag(ReminderOption.oneDay)
-                        Text("Custom").tag(ReminderOption.custom)
-                    }
-                    
-                    if reminderOption == .custom {
-                        Stepper("\(customDays) days before", value: $customDays, in: 1...60)
+                    ForEach(availableReminderDays, id: \.self) { days in
+                        let isSelected = reminderDaysSelection.contains(days)
+                        Button(action: {
+                            if isSelected {
+                                reminderDaysSelection.removeAll { $0 == days }
+                            } else {
+                                reminderDaysSelection.append(days)
+                            }
+                        }) {
+                            HStack {
+                                Text(reminderLabel(for: days))
+                                    .foregroundColor(.renewlyTextPrimary)
+                                Spacer()
+                                if isSelected {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.renewlyPrimary)
+                                }
+                            }
+                        }
                     }
                 }
                 
+                Section("Management & Cancellation Link") {
+                    TextField("https://...", text: $managementUrlString)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+                
                 Section("Notes") {
-                    TextField("Family plan, account details, etc.", text: $notes, axis: .vertical)
+                    TextField("Plan type, account email, etc.", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
             }
-            .navigationTitle("Edit Subscription")
+            .navigationTitle(subscription.type == .trial ? "Edit Free Trial" : "Edit Subscription")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -110,49 +148,52 @@ struct EditSubscriptionView: View {
         }
     }
     
+    private func reminderLabel(for days: Int) -> String {
+        if days == 0 { return "On renewal day" }
+        if days == 1 { return "1 day before" }
+        return "\(days) days before"
+    }
+    
     private func loadCurrentValues() {
         name = subscription.name
         priceString = String(format: "%.2f", subscription.price)
         currency = subscription.currency
         billingFrequency = subscription.billingFrequency
-        category = subscription.category
+        selectedCategoryName = subscription.categoryRaw
         status = subscription.status
         notes = subscription.notes
+        managementUrlString = subscription.managementUrl ?? ""
+        if let post = subscription.priceAfterTrial {
+            priceAfterTrialString = String(format: "%.2f", post)
+        }
         hasUnknownRenewalDate = subscription.hasUnknownRenewalDate
         if let nextDate = subscription.nextRenewalDate {
             renewalDate = nextDate
         }
-        if let firstReminder = subscription.reminderDays.first {
-            if firstReminder == 7 {
-                reminderOption = .sevenDays
-            } else if firstReminder == 3 {
-                reminderOption = .threeDays
-            } else if firstReminder == 1 {
-                reminderOption = .oneDay
-            } else {
-                reminderOption = .custom
-                customDays = firstReminder
-            }
-        }
+        reminderDaysSelection = subscription.reminderDays.isEmpty ? [7] : subscription.reminderDays
     }
     
     private func saveChanges() {
         subscription.name = name.trimmingCharacters(in: .whitespaces).isEmpty ? subscription.name : name
         subscription.price = Double(priceString.replacingOccurrences(of: ",", with: ".")) ?? subscription.price
+        if let postVal = Double(priceAfterTrialString.replacingOccurrences(of: ",", with: ".")) {
+            subscription.priceAfterTrial = postVal
+        }
         subscription.billingFrequency = billingFrequency
-        subscription.category = category
+        subscription.categoryRaw = selectedCategoryName
+        if let knownCat = SubscriptionCategory(rawValue: selectedCategoryName) {
+            subscription.category = knownCat
+        } else {
+            subscription.category = .other
+        }
         subscription.status = status
         subscription.notes = notes
+        let trimmedUrl = managementUrlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        subscription.managementUrl = trimmedUrl.isEmpty ? nil : trimmedUrl
         subscription.hasUnknownRenewalDate = hasUnknownRenewalDate
         subscription.nextRenewalDate = hasUnknownRenewalDate ? nil : renewalDate
+        subscription.reminderDays = reminderDaysSelection.isEmpty ? [1, 0] : reminderDaysSelection
         subscription.updatedAt = Date()
-        
-        switch reminderOption {
-        case .sevenDays: subscription.reminderDays = [7]
-        case .threeDays: subscription.reminderDays = [3]
-        case .oneDay: subscription.reminderDays = [1]
-        case .custom: subscription.reminderDays = [customDays]
-        }
         
         try? modelContext.save()
         NotificationManager.shared.scheduleReminders(for: subscription)

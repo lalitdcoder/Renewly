@@ -448,7 +448,8 @@ struct QuickAddSubscriptionSheet: View {
             hasUnknownRenewalDate: hasUnknownRenewalDate,
             status: .active,
             reminderDays: [1, 0],
-            notes: ""
+            notes: "",
+            managementUrl: preset.managementUrl
         )
         
         modelContext.insert(sub)

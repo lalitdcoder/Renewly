@@ -8,6 +8,7 @@ import SwiftUI
 enum SubscriptionCategory: String, Codable, CaseIterable {
     case entertainment = "Entertainment"
     case music = "Music"
+    case gaming = "Gaming"
     case cloud = "Cloud & Storage"
     case productivity = "Productivity"
     case utilities = "Utilities"
@@ -23,6 +24,8 @@ enum SubscriptionCategory: String, Codable, CaseIterable {
             return "film.fill"
         case .music:
             return "music.note"
+        case .gaming:
+            return "gamecontroller.fill"
         case .cloud:
             return "cloud.fill"
         case .productivity:
@@ -40,5 +43,9 @@ enum SubscriptionCategory: String, Codable, CaseIterable {
         case .other:
             return "square.grid.2x2.fill"
         }
+    }
+    
+    var color: Color {
+        CategoryManager.shared.color(for: self.rawValue)
     }
 }

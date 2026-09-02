@@ -158,29 +158,56 @@ struct CalendarView: View {
                     
                     // Selected Date Events Section
                     VStack(alignment: .leading, spacing: 12) {
-                        HStack {
+                        // Date header with renewals count and total cost summary
+                        let totalCost = eventsForSelectedDate.filter { $0.type == .subscription }.reduce(0.0) { $0 + $1.price }
+                        let trialsCount = eventsForSelectedDate.filter { $0.type == .trial }.count
+                        let paidCount = eventsForSelectedDate.filter { $0.type == .subscription }.count
+                        let currency = UserPreferences.shared.currency.rawValue
+                        
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(dayFormatter.string(from: selectedDate))
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.renewlyTextPrimary)
                             
-                            Spacer()
-                            
                             if !eventsForSelectedDate.isEmpty {
-                                Text("\(eventsForSelectedDate.count) event\(eventsForSelectedDate.count == 1 ? "" : "s")")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.renewlyTextSecondary)
+                                HStack(spacing: 6) {
+                                    if paidCount > 0 {
+                                        Text("\(paidCount) renewal\(paidCount == 1 ? "" : "s")")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.renewlyPrimary)
+                                        
+                                        Text("·")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.renewlyTextMuted)
+                                        
+                                        Text(String(format: "%@%.2f", currency, totalCost))
+                                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                                            .foregroundColor(.renewlyTextPrimary)
+                                    }
+                                    
+                                    if trialsCount > 0 {
+                                        if paidCount > 0 {
+                                            Text("·")
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundColor(.renewlyTextMuted)
+                                        }
+                                        Text("\(trialsCount) trial\(trialsCount == 1 ? "" : "s") ending")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(Color.renewlyTrialAmber)
+                                    }
+                                }
                             }
                         }
                         
                         if eventsForSelectedDate.isEmpty {
-                            HStack(spacing: 10) {
+                            HStack(spacing: 12) {
                                 Text("🎉")
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 22))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("No events on this day")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.renewlyTextPrimary)
-                                    Text("You're all caught up! No upcoming renewal charges or expiring trials.")
+                                    Text("You're all clear! No renewal charges or trial endings on this date.")
                                         .font(.system(size: 12))
                                         .foregroundColor(.renewlyTextSecondary)
                                 }
@@ -263,6 +290,19 @@ struct CalendarView: View {
             .background(Color.renewlyBackground.ignoresSafeArea())
             .navigationTitle("Calendar")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Today") {
+                        let today = Date()
+                        withAnimation {
+                            displayedMonth = today
+                            selectedDate = today
+                        }
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.renewlyPrimary)
+                }
+            }
         }
     }
     

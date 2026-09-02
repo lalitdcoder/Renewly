@@ -14,6 +14,29 @@ struct ServicePreset: Identifiable, Hashable {
     let defaultPrice: Double
     let category: SubscriptionCategory
     let defaultTrialDays: Int
+    let managementUrl: String?
+    
+    init(
+        id: String,
+        name: String,
+        iconAssetName: String? = nil,
+        sfSymbolName: String,
+        brandColorHex: String,
+        defaultPrice: Double,
+        category: SubscriptionCategory,
+        defaultTrialDays: Int = 0,
+        managementUrl: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.iconAssetName = iconAssetName
+        self.sfSymbolName = sfSymbolName
+        self.brandColorHex = brandColorHex
+        self.defaultPrice = defaultPrice
+        self.category = category
+        self.defaultTrialDays = defaultTrialDays
+        self.managementUrl = managementUrl
+    }
     
     var brandColor: Color {
         Color(hex: brandColorHex)
@@ -28,7 +51,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "E50914",
             defaultPrice: 17.99,
             category: .entertainment,
-            defaultTrialDays: 7
+            defaultTrialDays: 7,
+            managementUrl: "https://www.netflix.com/youraccount"
         ),
         ServicePreset(
             id: "spotify",
@@ -38,7 +62,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "1DB954",
             defaultPrice: 11.99,
             category: .music,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.spotify.com/account"
         ),
         ServicePreset(
             id: "disneyplus",
@@ -48,17 +73,19 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "113CCF",
             defaultPrice: 7.99,
             category: .entertainment,
-            defaultTrialDays: 7
+            defaultTrialDays: 7,
+            managementUrl: "https://www.disneyplus.com/account"
         ),
         ServicePreset(
             id: "primevideo",
-            name: "Amazon Prime Video",
+            name: "Amazon Prime",
             iconAssetName: "PrimeVideo",
             sfSymbolName: "cart.fill",
             brandColorHex: "00A8E1",
             defaultPrice: 8.99,
             category: .entertainment,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.amazon.com/mc/manage"
         ),
         ServicePreset(
             id: "youtubepremium",
@@ -68,17 +95,19 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "FF0000",
             defaultPrice: 11.99,
             category: .entertainment,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.youtube.com/paid_memberships"
         ),
         ServicePreset(
             id: "icloud",
-            name: "iCloud",
+            name: "iCloud+",
             iconAssetName: "iCloud",
             sfSymbolName: "icloud.fill",
             brandColorHex: "3388FF",
             defaultPrice: 2.99,
             category: .cloud,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://support.apple.com/HT202039"
         )
     ]
     
@@ -91,7 +120,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "00C4CC",
             defaultPrice: 12.99,
             category: .productivity,
-            defaultTrialDays: 14
+            defaultTrialDays: 14,
+            managementUrl: "https://www.canva.com/settings/billing-and-teams"
         ),
         ServicePreset(
             id: "primevideo",
@@ -101,7 +131,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "00A8E1",
             defaultPrice: 8.99,
             category: .entertainment,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.amazon.com/mc/manage"
         ),
         ServicePreset(
             id: "appletv",
@@ -111,7 +142,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "000000",
             defaultPrice: 8.99,
             category: .entertainment,
-            defaultTrialDays: 7
+            defaultTrialDays: 7,
+            managementUrl: "https://support.apple.com/HT202039"
         ),
         ServicePreset(
             id: "disneyplus",
@@ -121,7 +153,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "113CCF",
             defaultPrice: 7.99,
             category: .entertainment,
-            defaultTrialDays: 7
+            defaultTrialDays: 7,
+            managementUrl: "https://www.disneyplus.com/account"
         ),
         ServicePreset(
             id: "audible",
@@ -131,7 +164,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "F7991C",
             defaultPrice: 7.99,
             category: .entertainment,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.audible.com/account/overview"
         ),
         ServicePreset(
             id: "youtubepremium",
@@ -141,7 +175,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "FF0000",
             defaultPrice: 11.99,
             category: .entertainment,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.youtube.com/paid_memberships"
         )
     ]
     
@@ -163,7 +198,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "58CC02",
             defaultPrice: 6.99,
             category: .education,
-            defaultTrialDays: 14
+            defaultTrialDays: 14,
+            managementUrl: "https://www.duolingo.com/settings/super"
         ),
         ServicePreset(
             id: "chatgpt",
@@ -173,7 +209,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "10A37F",
             defaultPrice: 19.99,
             category: .productivity,
-            defaultTrialDays: 0
+            defaultTrialDays: 0,
+            managementUrl: "https://chatgpt.com/#settings/Account"
         ),
         ServicePreset(
             id: "notion",
@@ -183,7 +220,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "000000",
             defaultPrice: 8.00,
             category: .productivity,
-            defaultTrialDays: 14
+            defaultTrialDays: 14,
+            managementUrl: "https://www.notion.so/settings"
         ),
         ServicePreset(
             id: "adobe",
@@ -193,7 +231,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "FF0000",
             defaultPrice: 49.99,
             category: .productivity,
-            defaultTrialDays: 7
+            defaultTrialDays: 7,
+            managementUrl: "https://account.adobe.com/plans"
         ),
         ServicePreset(
             id: "dropbox",
@@ -203,7 +242,30 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "0061FF",
             defaultPrice: 9.99,
             category: .cloud,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.dropbox.com/account/plan"
+        ),
+        ServicePreset(
+            id: "xboxgamepass",
+            name: "Xbox Game Pass",
+            iconAssetName: nil,
+            sfSymbolName: "gamecontroller.fill",
+            brandColorHex: "107C10",
+            defaultPrice: 12.99,
+            category: .gaming,
+            defaultTrialDays: 14,
+            managementUrl: "https://account.microsoft.com/services"
+        ),
+        ServicePreset(
+            id: "playstationplus",
+            name: "PlayStation Plus",
+            iconAssetName: nil,
+            sfSymbolName: "gamecontroller.fill",
+            brandColorHex: "003791",
+            defaultPrice: 6.99,
+            category: .gaming,
+            defaultTrialDays: 7,
+            managementUrl: "https://www.playstation.com/acct/management"
         ),
         ServicePreset(
             id: "strava",
@@ -213,7 +275,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "FC4C02",
             defaultPrice: 8.99,
             category: .healthAndFitness,
-            defaultTrialDays: 30
+            defaultTrialDays: 30,
+            managementUrl: "https://www.strava.com/settings/billing"
         ),
         ServicePreset(
             id: "gym",
@@ -223,7 +286,8 @@ struct ServicePreset: Identifiable, Hashable {
             brandColorHex: "34C759",
             defaultPrice: 35.00,
             category: .healthAndFitness,
-            defaultTrialDays: 0
+            defaultTrialDays: 0,
+            managementUrl: nil
         )
     ]
 }

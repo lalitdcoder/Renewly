@@ -54,14 +54,14 @@ struct CategorySpendingCard: View {
                                     .fill(item.color.opacity(0.15))
                                     .frame(width: 32, height: 32)
                                 
-                                Image(systemName: item.category.iconName)
+                                Image(systemName: item.categoryIcon)
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(item.color)
                             }
                             
                             // Name & Count
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(item.category.rawValue)
+                                Text(item.categoryName)
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.renewlyTextPrimary)
                                 

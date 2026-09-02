@@ -75,22 +75,22 @@ final class NotificationManager {
             content.sound = .default
             
             if subscription.type == .trial {
-                content.title = "Free Trial Ending Soon"
+                content.title = "Renewly"
                 if daysBefore == 0 {
-                    content.body = "\(subscription.name) free trial ends today! Afterwards it's \(subscription.currency)\(String(format: "%.2f", subscription.priceAfterTrial ?? subscription.price))/month."
+                    content.body = "Your \(subscription.name) trial ends today."
                 } else if daysBefore == 1 {
-                    content.body = "\(subscription.name) free trial ends tomorrow. Cancel today to avoid charges."
+                    content.body = "Your \(subscription.name) trial ends tomorrow."
                 } else {
-                    content.body = "\(subscription.name) free trial ends in \(daysBefore) days."
+                    content.body = "Your \(subscription.name) trial ends in \(daysBefore) days."
                 }
             } else {
-                content.title = "Subscription Renewal"
+                content.title = "Renewly"
                 if daysBefore == 0 {
-                    content.body = "\(subscription.name) renews today for \(subscription.currency)\(String(format: "%.2f", subscription.price))."
+                    content.body = String(format: "%@ renews today · %@%.2f", subscription.name, subscription.currency, subscription.price)
                 } else if daysBefore == 1 {
-                    content.body = "\(subscription.name) renews tomorrow for \(subscription.currency)\(String(format: "%.2f", subscription.price))."
+                    content.body = String(format: "%@ renews tomorrow · %@%.2f", subscription.name, subscription.currency, subscription.price)
                 } else {
-                    content.body = "\(subscription.name) renews in \(daysBefore) days (\(subscription.currency)\(String(format: "%.2f", subscription.price)))."
+                    content.body = String(format: "%@ renews in %d days · %@%.2f", subscription.name, daysBefore, subscription.currency, subscription.price)
                 }
             }
             
@@ -110,6 +110,12 @@ final class NotificationManager {
                     print("Error scheduling notification for \(subscription.name): \(error)")
                 }
             }
+        }
+    }
+    
+    func scheduleAll(subscriptions: [SubscriptionModel]) {
+        for subscription in subscriptions {
+            scheduleReminders(for: subscription)
         }
     }
     

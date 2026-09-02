@@ -137,16 +137,91 @@ struct RenewlyTests {
         #expect(categories.count == 2)
         
         // Entertainment: £30 / £40 = 75%
-        let ent = categories.first { $0.category == .entertainment }
+        let ent = categories.first { $0.categoryName == "Entertainment" }
         #expect(ent != nil)
         #expect(ent?.monthlyAmount == 30.00)
         #expect(ent?.percentage == 75.0)
         
         // Music: £10 / £40 = 25%
-        let music = categories.first { $0.category == .music }
+        let music = categories.first { $0.categoryName == "Music" }
         #expect(music != nil)
         #expect(music?.monthlyAmount == 10.00)
         #expect(music?.percentage == 25.0)
+    }
+    
+    @Test func testRenewalRadarCalculations() throws {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        let sub1 = SubscriptionModel(
+            name: "Netflix",
+            type: .subscription,
+            price: 17.99,
+            nextRenewalDate: calendar.date(byAdding: .day, value: 3, to: today),
+            status: .active
+        )
+        let sub2 = SubscriptionModel(
+            name: "Spotify",
+            type: .subscription,
+            price: 11.99,
+            nextRenewalDate: calendar.date(byAdding: .day, value: 6, to: today),
+            status: .active
+        )
+        let sub3Far = SubscriptionModel(
+            name: "Yearly Sub",
+            type: .subscription,
+            price: 50.00,
+            nextRenewalDate: calendar.date(byAdding: .day, value: 25, to: today),
+            status: .active
+        )
+        
+        let radar7 = SpendingCalculator.renewalRadarItems(subscriptions: [sub1, sub2, sub3Far], withinDays: 7, referenceDate: today)
+        #expect(radar7.count == 2)
+        
+        let weekTotal = SpendingCalculator.renewalRadarWeekTotal(subscriptions: [sub1, sub2, sub3Far], referenceDate: today)
+        #expect(abs(weekTotal - 29.98) < 0.01)
+        
+        let summary = SpendingCalculator.renewalRadarWeekSummary(subscriptions: [sub1, sub2, sub3Far], currency: "£", referenceDate: today)
+        #expect(summary == "£29.98 renewing this week")
+    }
+    
+    @Test func testPotentialSavingsCalculation() throws {
+        let sub1 = SubscriptionModel(
+            name: "Netflix",
+            type: .subscription,
+            price: 17.99,
+            billingFrequency: .monthly,
+            status: .active
+        )
+        let sub2 = SubscriptionModel(
+            name: "Spotify",
+            type: .subscription,
+            price: 11.99,
+            billingFrequency: .monthly,
+            status: .active
+        )
+        
+        let potential = InsightsCalculator.calculatePotentialSavings(subscriptions: [sub1, sub2])
+        #expect(potential.items.count == 2)
+        #expect(abs(potential.totalMonthlyPotentialSavings - 29.98) < 0.01)
+        #expect(abs(potential.totalAnnualPotentialSavings - 359.76) < 0.01)
+    }
+    
+    @Test func testCategoryManagerCustomCategory() throws {
+        let manager = CategoryManager.shared
+        let initialCount = manager.allCategories.count
+        
+        manager.addCategory(name: "Gaming Pass", sfSymbolName: "gamecontroller.fill", colorHex: "00C4CC")
+        #expect(manager.allCategories.count == initialCount + 1)
+        
+        let customCat = manager.allCategories.first { $0.name == "Gaming Pass" }
+        #expect(customCat != nil)
+        #expect(customCat?.isDefault == false)
+        
+        if let id = customCat?.id {
+            manager.deleteCustomCategory(id: id)
+            #expect(manager.allCategories.count == initialCount)
+        }
     }
     
     @Test func testInsightsSavingsCalculation() throws {

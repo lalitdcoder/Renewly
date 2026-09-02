@@ -8,26 +8,15 @@ import Foundation
 
 struct CategorySpendItem: Identifiable, Equatable {
     let id: String
-    let category: SubscriptionCategory
+    let categoryName: String
+    let categoryIcon: String
+    let categoryColor: Color
     let monthlyAmount: Double
     let yearlyAmount: Double
     let percentage: Double
     let subscriptionCount: Int
     
-    var color: Color {
-        switch category {
-        case .entertainment: return Color(hex: "E50914")
-        case .music: return Color(hex: "1DB954")
-        case .cloud: return Color(hex: "3388FF")
-        case .productivity: return Color(hex: "00C4CC")
-        case .utilities: return Color(hex: "FF9500")
-        case .healthAndFitness: return Color(hex: "FF2D55")
-        case .education: return Color(hex: "58CC02")
-        case .lifestyle: return Color(hex: "AF52DE")
-        case .finance: return Color(hex: "007AFF")
-        case .other: return Color(hex: "8E8E93")
-        }
-    }
+    var color: Color { categoryColor }
 }
 
 struct SavingsSummary: Equatable {
@@ -39,6 +28,43 @@ struct SavingsSummary: Equatable {
     
     var hasSavings: Bool {
         totalEstimatedAnnualSavings > 0
+    }
+}
+
+struct PotentialSavingsItem: Identifiable, Equatable {
+    let id: UUID
+    let name: String
+    let iconAssetName: String?
+    let sfSymbolName: String
+    let brandColorHex: String
+    let currency: String
+    let monthlyCost: Double
+    let yearlyCost: Double
+}
+
+struct PotentialSavingsSummary: Equatable {
+    let items: [PotentialSavingsItem]
+    let totalAnnualPotentialSavings: Double
+    let totalMonthlyPotentialSavings: Double
+    
+    var hasItems: Bool {
+        !items.isEmpty
+    }
+}
+
+struct MonthOverMonthSpendComparison: Equatable {
+    let previousSpend: Double
+    let currentSpend: Double
+    let difference: Double
+    let hasComparison: Bool
+    
+    var isIncrease: Bool { difference > 0.001 }
+    var isDecrease: Bool { difference < -0.001 }
+    var isUnchanged: Bool { abs(difference) <= 0.001 }
+    
+    func formattedDifference(currency: String = "£") -> String {
+        let prefix = difference > 0 ? "+" : ""
+        return String(format: "%@%@%.2f / month", prefix, currency, difference)
     }
 }
 
@@ -66,24 +92,93 @@ enum InsightsCalculator {
         
         guard totalMonthly > 0 else { return [] }
         
-        var categoryMap: [SubscriptionCategory: (amount: Double, count: Int)] = [:]
+        var categoryMap: [String: (amount: Double, count: Int)] = [:]
         
         for sub in activeSubs {
-            let current = categoryMap[sub.category] ?? (0.0, 0)
-            categoryMap[sub.category] = (current.amount + sub.monthlyEquivalentCost, current.count + 1)
+            let catName = sub.categoryRaw
+            let current = categoryMap[catName] ?? (0.0, 0)
+            categoryMap[catName] = (current.amount + sub.monthlyEquivalentCost, current.count + 1)
         }
         
-        return categoryMap.map { (cat, data) in
+        return categoryMap.map { (catName, data) in
             let percentage = (data.amount / totalMonthly) * 100.0
+            let icon = CategoryManager.shared.iconName(for: catName)
+            let color = CategoryManager.shared.color(for: catName)
+            
             return CategorySpendItem(
-                id: cat.rawValue,
-                category: cat,
+                id: catName,
+                categoryName: catName,
+                categoryIcon: icon,
+                categoryColor: color,
                 monthlyAmount: data.amount,
                 yearlyAmount: data.amount * 12.0,
                 percentage: percentage,
                 subscriptionCount: data.count
             )
         }.sorted { $0.monthlyAmount > $1.monthlyAmount }
+    }
+    
+    // MARK: - Potential Savings Calculation
+    static func calculatePotentialSavings(subscriptions: [SubscriptionModel]) -> PotentialSavingsSummary {
+        let activeSubs = subscriptions
+            .filter { $0.status == .active && $0.type == .subscription }
+            .sorted { $0.monthlyEquivalentCost > $1.monthlyEquivalentCost }
+        
+        let items = activeSubs.map { sub in
+            PotentialSavingsItem(
+                id: sub.id,
+                name: sub.name,
+                iconAssetName: sub.iconAssetName,
+                sfSymbolName: sub.sfSymbolName,
+                brandColorHex: sub.brandColorHex,
+                currency: sub.currency,
+                monthlyCost: sub.monthlyEquivalentCost,
+                yearlyCost: sub.yearlyEquivalentCost
+            )
+        }
+        
+        let totalAnnual = items.reduce(0.0) { $0 + $1.yearlyCost }
+        let totalMonthly = items.reduce(0.0) { $0 + $1.monthlyCost }
+        
+        return PotentialSavingsSummary(
+            items: items,
+            totalAnnualPotentialSavings: totalAnnual,
+            totalMonthlyPotentialSavings: totalMonthly
+        )
+    }
+    
+    // MARK: - Month-over-Month Comparison
+    static func calculateMonthOverMonthComparison(subscriptions: [SubscriptionModel], referenceDate: Date = Date()) -> MonthOverMonthSpendComparison {
+        let calendar = Calendar.current
+        let activeSubs = subscriptions.filter { $0.status == .active && $0.type == .subscription }
+        let currentSpend = activeSubs.reduce(0.0) { $0 + $1.monthlyEquivalentCost }
+        
+        guard let prevMonthDate = calendar.date(byAdding: .month, value: -1, to: referenceDate) else {
+            return MonthOverMonthSpendComparison(previousSpend: currentSpend, currentSpend: currentSpend, difference: 0.0, hasComparison: false)
+        }
+        
+        let prevMonthSubs = subscriptions.filter { sub in
+            guard sub.type == .subscription else { return false }
+            let start = sub.startDate ?? Date.distantPast
+            if start > prevMonthDate { return false }
+            if sub.status == .cancelled || sub.status == .expired {
+                if sub.updatedAt < prevMonthDate { return false }
+            }
+            return true
+        }
+        
+        let previousSpend = prevMonthSubs.reduce(0.0) { $0 + $1.monthlyEquivalentCost }
+        
+        // If they have distinct values or tracking history
+        let hasComparison = previousSpend > 0 && abs(currentSpend - previousSpend) > 0.001
+        let diff = currentSpend - previousSpend
+        
+        return MonthOverMonthSpendComparison(
+            previousSpend: previousSpend > 0 ? previousSpend : currentSpend,
+            currentSpend: currentSpend,
+            difference: diff,
+            hasComparison: hasComparison
+        )
     }
     
     // MARK: - Biggest Subscriptions
@@ -149,7 +244,6 @@ enum InsightsCalculator {
             guard let monthDate = calendar.date(byAdding: .month, value: -i, to: today) else { continue }
             let monthLabel = monthFormatter.string(from: monthDate)
             
-            // Calculate active subscriptions as of that month based on startDate
             let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
             
             let subsInMonth = subscriptions.filter { sub in
@@ -157,7 +251,6 @@ enum InsightsCalculator {
                 let start = sub.startDate ?? Date.distantPast
                 if start > monthDate { return false }
                 
-                // If cancelled/expired, check if cancelled before this month
                 if (sub.status == .cancelled || sub.status == .expired) {
                     let updated = sub.updatedAt
                     if updated < monthStart {
@@ -197,14 +290,15 @@ enum InsightsCalculator {
         let activePaidSubs = activeSubs.filter { $0.type == .subscription }
         let categories = calculateCategoryBreakdown(subscriptions: subscriptions)
         let savings = calculateSavings(subscriptions: subscriptions)
+        let potential = calculatePotentialSavings(subscriptions: subscriptions)
         
         // 1. Top category insight
         if let topCategory = categories.first, topCategory.percentage > 0 {
             insights.append(
                 AutomaticInsightItem(
-                    icon: topCategory.category.iconName,
-                    iconColor: topCategory.color,
-                    title: "\(topCategory.category.rawValue) is your largest category",
+                    icon: topCategory.categoryIcon,
+                    iconColor: topCategory.categoryColor,
+                    title: "\(topCategory.categoryName) is your largest category",
                     description: String(format: "Accounting for %.0f%% of your monthly spend (%@%.2f/mo).", topCategory.percentage, currency, topCategory.monthlyAmount)
                 )
             )
@@ -231,6 +325,16 @@ enum InsightsCalculator {
                     iconColor: Color.renewlySuccess,
                     title: "Estimated Savings Avoided",
                     description: String(format: "You've avoided an estimated %@%.2f/year by cancelling %d subscription%@.", currency, savings.totalEstimatedAnnualSavings, savings.cancelledCount + savings.stoppedTrialCount, (savings.cancelledCount + savings.stoppedTrialCount) == 1 ? "" : "s")
+                )
+            )
+        } else if potential.hasItems {
+            // Neutral informational potential savings insight
+            insights.append(
+                AutomaticInsightItem(
+                    icon: "info.circle.fill",
+                    iconColor: Color.renewlyPrimary,
+                    title: "Annual Subscription Commitment",
+                    description: String(format: "Your active subscriptions total %@%.2f per year.", currency, potential.totalAnnualPotentialSavings)
                 )
             )
         }

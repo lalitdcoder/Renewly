@@ -50,7 +50,7 @@ struct SubscriptionsListView: View {
         if !query.isEmpty {
             items = items.filter {
                 $0.name.localizedCaseInsensitiveContains(query) ||
-                $0.category.rawValue.localizedCaseInsensitiveContains(query) ||
+                $0.categoryRaw.localizedCaseInsensitiveContains(query) ||
                 $0.status.displayName.localizedCaseInsensitiveContains(query)
             }
         }

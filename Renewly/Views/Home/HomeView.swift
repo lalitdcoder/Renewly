@@ -32,6 +32,10 @@ struct HomeView: View {
         SpendingCalculator.upcomingRenewals(subscriptions: subscriptions, limit: 3)
     }
     
+    private var reviewCandidates: [SubscriptionModel] {
+        SpendingCalculator.reviewCandidateItems(subscriptions: subscriptions)
+    }
+    
     private var currencySymbol: String {
         UserPreferences.shared.currency.rawValue
     }
@@ -131,52 +135,33 @@ struct HomeView: View {
                             .padding(.horizontal, 24)
                         }
                         
-                        // "Upcoming" Section matching Screen 04
-                        if !upcomingItems.isEmpty {
+                        // Renewal Radar Section ("Coming up" + Weekly Summary)
+                        RenewalRadarSection(
+                            subscriptions: subscriptions,
+                            currency: currencySymbol,
+                            onSeeAll: {
+                                withAnimation {
+                                    selectedTab = .subs
+                                }
+                            },
+                            onSelectSubscription: onSelectSubscription
+                        )
+                        
+                        // "Worth reviewing?" Card (Periodic calm review prompt)
+                        if let reviewItem = reviewCandidates.first {
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Upcoming")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.renewlyTextSecondary)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        let impact = UIImpactFeedbackGenerator(style: .light)
-                                        impact.impactOccurred()
+                                SubscriptionReviewCard(
+                                    subscription: reviewItem,
+                                    onKeep: {
                                         withAnimation {
-                                            selectedTab = .subs
+                                            reviewItem.snoozeReview()
+                                            try? modelContext.save()
                                         }
-                                    }) {
-                                        Text("See all")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(.renewlyPrimary)
+                                    },
+                                    onReview: {
+                                        onSelectSubscription(reviewItem)
                                     }
-                                }
-                                
-                                // Upcoming rows card container
-                                VStack(spacing: 0) {
-                                    ForEach(Array(upcomingItems.enumerated()), id: \.element.id) { index, sub in
-                                        UpcomingSubscriptionRow(subscription: sub) {
-                                            onSelectSubscription(sub)
-                                        }
-                                        
-                                        if index < upcomingItems.count - 1 {
-                                            Divider()
-                                                .background(Color.renewlyDivider)
-                                                .padding(.leading, 52)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 4)
-                                .background(Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .stroke(Color.renewlyCardBorder, lineWidth: 1)
                                 )
-                                .shadow(color: Color.black.opacity(0.02), radius: 4, y: 1)
                             }
                             .padding(.horizontal, 24)
                         }

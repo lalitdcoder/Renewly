@@ -55,6 +55,14 @@ struct InsightsView: View {
         InsightsCalculator.calculateSavings(subscriptions: subscriptions)
     }
     
+    private var potentialSavingsSummary: PotentialSavingsSummary {
+        InsightsCalculator.calculatePotentialSavings(subscriptions: subscriptions)
+    }
+    
+    private var monthOverMonthComparison: MonthOverMonthSpendComparison {
+        InsightsCalculator.calculateMonthOverMonthComparison(subscriptions: subscriptions)
+    }
+    
     private var timelinePoints: [SpendingTimelinePoint] {
         InsightsCalculator.calculateSpendingTimeline(subscriptions: subscriptions, numberOfMonths: 6)
     }
@@ -91,21 +99,31 @@ struct InsightsView: View {
                         )
                         .padding(.horizontal, 24)
                         
-                        // 2. Spending Trend (Spending over time)
+                        // 2. Month-over-Month Comparison (if applicable)
+                        if monthOverMonthComparison.hasComparison {
+                            MonthOverMonthCard(
+                                comparison: monthOverMonthComparison,
+                                currency: currencySymbol
+                            )
+                            .padding(.horizontal, 24)
+                        }
+                        
+                        // 3. Spending Trend (Spending over time)
                         SpendingTrendCard(
                             timelinePoints: timelinePoints,
                             currency: currencySymbol
                         )
                         .padding(.horizontal, 24)
                         
-                        // 3. Money Saved Card
+                        // 4. Money Saved & Potential Savings Card
                         SavingsCard(
                             savings: savingsSummary,
+                            potentialSavings: potentialSavingsSummary,
                             currency: currencySymbol
                         )
                         .padding(.horizontal, 24)
                         
-                        // 4. Spending by Category Card
+                        // 5. Spending by Category Card
                         CategorySpendingCard(
                             categories: categoryBreakdown,
                             currency: currencySymbol,
@@ -113,7 +131,7 @@ struct InsightsView: View {
                         )
                         .padding(.horizontal, 24)
                         
-                        // 5. Biggest Monthly Costs Card
+                        // 6. Biggest Monthly Costs Card
                         TopSubscriptionsCard(
                             subscriptions: biggestSubscriptions,
                             currency: currencySymbol,
@@ -121,7 +139,7 @@ struct InsightsView: View {
                         )
                         .padding(.horizontal, 24)
                         
-                        // 6. Subscription Overview Card
+                        // 7. Subscription Overview Card
                         SubscriptionOverviewCard(
                             activeCount: activeCount,
                             trialCount: trialCount,
@@ -130,7 +148,7 @@ struct InsightsView: View {
                         )
                         .padding(.horizontal, 24)
                         
-                        // 7. Automatic Insights Card
+                        // 8. Automatic Insights Card
                         if !automaticInsights.isEmpty {
                             AutomaticInsightsCard(insights: automaticInsights)
                                 .padding(.horizontal, 24)

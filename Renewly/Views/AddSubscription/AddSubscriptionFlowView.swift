@@ -173,7 +173,8 @@ struct AddSubscriptionFlowView: View {
             nextRenewalDate: hasUnknownRenewalDate ? nil : renewalDate,
             hasUnknownRenewalDate: hasUnknownRenewalDate,
             status: .active,
-            reminderDays: reminderDays
+            reminderDays: reminderDays,
+            managementUrl: selectedPreset?.managementUrl
         )
         
         modelContext.insert(newSub)

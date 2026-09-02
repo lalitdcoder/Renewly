@@ -490,7 +490,8 @@ struct AddFreeTrialFlowView: View {
             priceAfterTrial: postPrice,
             status: .active,
             reminderDays: reminderDays,
-            notes: "\(trialDurationDays)-day free trial"
+            notes: "\(trialDurationDays)-day free trial",
+            managementUrl: selectedPreset?.managementUrl
         )
         
         modelContext.insert(newTrial)

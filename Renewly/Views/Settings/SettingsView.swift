@@ -14,10 +14,14 @@ struct SettingsView: View {
     
     @State private var showHelpSheet = false
     @State private var showCurrencySheet = false
+    @State private var showCategorySheet = false
+    @State private var showWidgetsSheet = false
     @State private var showExportShareSheet = false
     @State private var exportFileURL: URL?
     @State private var showResetConfirmation = false
     @State private var showClearConfirmation = false
+    @State private var calendarToastMessage: String? = nil
+    @State private var showCalendarToast = false
     
     var body: some View {
         NavigationStack {
@@ -78,7 +82,7 @@ struct SettingsView: View {
                         }
                     }
                     
-                    // Group 2: Preferences
+                    // Group 2: Preferences & Customization
                     SettingsGroupCard(title: "Preferences") {
                         VStack(spacing: 0) {
                             // Currency Row
@@ -89,6 +93,30 @@ struct SettingsView: View {
                                 value: "\(userPreferences.currency.name)"
                             ) {
                                 showCurrencySheet = true
+                            }
+                            
+                            Divider().background(Color.renewlyDivider).padding(.leading, 56)
+                            
+                            // Custom Categories Row
+                            SettingsNavigationRow(
+                                icon: "tag.fill",
+                                iconColor: Color(hex: "9B51E0"),
+                                title: "Custom Categories",
+                                value: "\(CategoryManager.shared.allCategories.count)"
+                            ) {
+                                showCategorySheet = true
+                            }
+                            
+                            Divider().background(Color.renewlyDivider).padding(.leading, 56)
+                            
+                            // Home Screen Widgets Row
+                            SettingsNavigationRow(
+                                icon: "rectangle.3.group.fill",
+                                iconColor: Color(hex: "6354EC"),
+                                title: "Home Screen Widgets",
+                                value: "Preview"
+                            ) {
+                                showWidgetsSheet = true
                             }
                             
                             Divider().background(Color.renewlyDivider).padding(.leading, 56)
@@ -136,6 +164,26 @@ struct SettingsView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
+                        }
+                    }
+                    
+                    // Group 3: Integrations & Calendar
+                    SettingsGroupCard(title: "Calendar Integration") {
+                        VStack(spacing: 0) {
+                            SettingsButtonRow(
+                                icon: "calendar.badge.plus",
+                                iconColor: Color(hex: "E50914"),
+                                title: "Sync Renewals to Apple Calendar",
+                                color: .renewlyPrimary
+                            ) {
+                                Task {
+                                    let result = await CalendarSyncManager.shared.syncAllEvents(subscriptions: subscriptions)
+                                    await MainActor.run {
+                                        calendarToastMessage = result.message
+                                        showCalendarToast = true
+                                    }
+                                }
+                            }
                         }
                     }
                     
@@ -227,10 +275,21 @@ struct SettingsView: View {
             .sheet(isPresented: $showCurrencySheet) {
                 CurrencyPickerSheet(selectedCurrency: $userPreferences.currency)
             }
+            .sheet(isPresented: $showCategorySheet) {
+                CategoryManagementSheet()
+            }
+            .sheet(isPresented: $showWidgetsSheet) {
+                WidgetPreviewView()
+            }
             .sheet(isPresented: $showExportShareSheet) {
                 if let url = exportFileURL {
                     ShareSheet(activityItems: [url])
                 }
+            }
+            .alert("Calendar Integration", isPresented: $showCalendarToast) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(calendarToastMessage ?? "")
             }
             .alert("Reset Demo Data?", isPresented: $showResetConfirmation) {
                 Button("Cancel", role: .cancel) {}

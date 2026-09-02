@@ -9,12 +9,15 @@ import SwiftData
 struct SubscriptionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     
     @Bindable var subscription: SubscriptionModel
     
     @State private var showEditSheet = false
     @State private var showDeleteConfirmation = false
     @State private var showCancelConfirmation = false
+    @State private var calendarToastMessage: String? = nil
+    @State private var showCalendarToast = false
     
     private var formattedRenewalDate: String {
         if subscription.hasUnknownRenewalDate {
@@ -91,11 +94,17 @@ struct SubscriptionDetailView: View {
                     
                     Divider().background(Color.renewlyDivider).padding(.leading, 16)
                     
-                    DetailRow(label: "Category", value: subscription.category.rawValue)
+                    DetailRow(label: "Category", value: subscription.categoryDisplayName)
                     
                     if !subscription.notes.isEmpty {
                         Divider().background(Color.renewlyDivider).padding(.leading, 16)
                         DetailRow(label: "Notes", value: subscription.notes)
+                    }
+                    
+                    let trackingMonths = subscription.trackingDurationInMonths()
+                    if trackingMonths > 0 {
+                        Divider().background(Color.renewlyDivider).padding(.leading, 16)
+                        DetailRow(label: "Tracked for", value: "\(trackingMonths) month\(trackingMonths == 1 ? "" : "s")")
                     }
                 }
                 .background(Color.white)
@@ -106,6 +115,53 @@ struct SubscriptionDetailView: View {
                 )
                 .shadow(color: Color.black.opacity(0.02), radius: 4, y: 1)
                 .padding(.horizontal, 24)
+                
+                // Direct Management Link Card (if available)
+                if let urlString = subscription.managementUrl, let url = URL(string: urlString) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Button(action: {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            openURL(url)
+                        }) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color.renewlyPrimaryLight)
+                                        .frame(width: 36, height: 36)
+                                    Image(systemName: "safari")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.renewlyPrimary)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Manage \(subscription.name)")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.renewlyTextPrimary)
+                                    Text("Open official account & cancellation page")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.renewlyTextSecondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.renewlyPrimary)
+                            }
+                            .padding(14)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(Color.renewlyCardBorder, lineWidth: 1)
+                            )
+                            .shadow(color: Color.black.opacity(0.02), radius: 4, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal, 24)
+                }
                 
                 // Actions Card matching Screen 06
                 VStack(alignment: .leading, spacing: 10) {
@@ -118,13 +174,32 @@ struct SubscriptionDetailView: View {
                         // Edit Action
                         ActionButtonRow(
                             icon: "pencil",
-                            title: "Edit",
+                            title: "Edit Details",
                             color: .renewlyTextPrimary
                         ) {
                             showEditSheet = true
                         }
                         
                         Divider().background(Color.renewlyDivider).padding(.leading, 44)
+                        
+                        // Add to Apple Calendar
+                        if subscription.nextRenewalDate != nil && !subscription.hasUnknownRenewalDate {
+                            ActionButtonRow(
+                                icon: "calendar.badge.plus",
+                                title: "Add to Apple Calendar",
+                                color: .renewlyPrimary
+                            ) {
+                                Task {
+                                    let result = await CalendarSyncManager.shared.addEvent(for: subscription)
+                                    await MainActor.run {
+                                        calendarToastMessage = result.message
+                                        showCalendarToast = true
+                                    }
+                                }
+                            }
+                            
+                            Divider().background(Color.renewlyDivider).padding(.leading, 44)
+                        }
                         
                         // Pause / Resume Action
                         let isPaused = subscription.status == .paused
@@ -209,6 +284,11 @@ struct SubscriptionDetailView: View {
         }
         .sheet(isPresented: $showEditSheet) {
             EditSubscriptionView(subscription: subscription)
+        }
+        .alert("Calendar Integration", isPresented: $showCalendarToast) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(calendarToastMessage ?? "")
         }
         .alert("Delete Subscription?", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}

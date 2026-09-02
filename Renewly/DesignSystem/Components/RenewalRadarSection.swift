@@ -109,14 +109,15 @@ struct RadarSubscriptionRow: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
         let dateStr = formatter.string(from: renewal)
+        let planPrefix = subscription.hasPlan ? "\(subscription.planName!) · " : ""
         
         if subscription.type == .trial {
             if let post = subscription.priceAfterTrial {
-                return String(format: "%@%.2f/mo afterwards · %@", subscription.currency, post, dateStr)
+                return String(format: "%@%@%.2f/mo afterwards · %@", planPrefix, subscription.currency, post, dateStr)
             }
-            return "Free Trial · \(dateStr)"
+            return "\(planPrefix)Free Trial · \(dateStr)"
         }
-        return String(format: "%@%.2f · %@", subscription.currency, subscription.price, dateStr)
+        return String(format: "%@%@%.2f · %@", planPrefix, subscription.currency, subscription.price, dateStr)
     }
     
     var body: some View {

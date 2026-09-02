@@ -25,12 +25,18 @@ Designed with Apple Human Interface Guidelines in mind, Renewly features soft sh
 
 ## ✨ Features
 
-### 📡 1. Renewal Radar ("Coming up")
+### 🏷️ 1. Subscription Tier & Plan Selection
+- **Tailored Plan Catalogs**: Select the exact plan/tier you have for popular services (e.g., Netflix: *Basic with Ads*, *Standard*, *Premium*; iCloud+: *50 GB*, *200 GB*, *2 TB*, *6 TB*, *12 TB*; ChatGPT: *Go*, *Plus*, *Pro*; Spotify: *Individual*, *Duo*, *Family*, *Student*; Disney+: *Standard with Ads*, *Standard*, *Premium*).
+- **Smart Price Population**: Automatically pre-fills current market pricing upon selecting a tier, while keeping the price 100% editable for promotional, grandfathered, or custom pricing.
+- **Custom Plan Option**: Full support for *"Custom plan / I don't see my plan"* to enter custom tiers (e.g. *Adobe Student All Apps*, *Gym Off-Peak*).
+- **One-Tap Plan Switcher**: Easily switch tiers directly from the Subscription Detail screen, instantly updating the plan and price across Home, Subscriptions, Radar, Insights, and Widgets.
+
+### 📡 2. Renewal Radar ("Coming up")
 - **Live Weekly Summary**: Instant overview of charges coming in the next 7 days (e.g. `£29.98 renewing this week`).
 - **Real-Time Countdown Badges**: Color-coded countdown badges (`Today`, `1 day`, `3 days`, `6 days`).
 - **Direct Access**: Tap any upcoming item to view details, cancel, edit, or manage the subscription.
 
-### 🆓 2. First-Class Free-Trial Tracking
+### 🆓 3. First-Class Free-Trial Tracking
 - **Trial Lifecycle Management**: Dedicated free-trial flow with trial start dates, duration (`7`, `14`, `30`, or custom days), and regular post-trial cost tracking.
 - **Urgent Trial Alerts**: High-visibility amber badges and ending alerts ($\le 3$ days remaining) so you never miss cancellation deadlines.
 - **Filter Chip Tabs**: Quickly toggle between `All`, `Active`, `Trials`, `Paused`, and `Cancelled` subscriptions.

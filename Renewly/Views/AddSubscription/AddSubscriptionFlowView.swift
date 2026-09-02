@@ -16,6 +16,9 @@ struct AddSubscriptionFlowView: View {
     @State private var selectedPreset: ServicePreset? = ServicePreset.popularSubscriptions.first
     @State private var name: String = "Netflix"
     @State private var category: SubscriptionCategory = .entertainment
+    @State private var selectedPlanName: String = ""
+    @State private var customPlanName: String = ""
+    @State private var isCustomPlan: Bool = false
     @State private var priceString: String = "17.99"
     @State private var currency: String = UserPreferences.shared.currency.rawValue
     @State private var billingFrequency: BillingFrequency = .monthly
@@ -24,12 +27,36 @@ struct AddSubscriptionFlowView: View {
     @State private var selectedReminderOption: ReminderOption = .sevenDays
     @State private var customReminderDays: Int = 5
     
+    private var serviceHasPlans: Bool {
+        if let preset = selectedPreset {
+            return preset.hasPredefinedPlans
+        }
+        return false
+    }
+    
+    private var totalVisibleSteps: Int {
+        serviceHasPlans ? 5 : 4
+    }
+    
+    private var progressStepIndex: Int {
+        if serviceHasPlans {
+            return currentStep
+        } else {
+            // Map steps 1, 3, 4, 5 to 1, 2, 3, 4
+            if currentStep == 1 { return 1 }
+            if currentStep == 3 { return 2 }
+            if currentStep == 4 { return 3 }
+            if currentStep == 5 { return 4 }
+            return 5
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Segmented Progress Bar (Steps 1 to 4)
-                if currentStep <= 4 {
-                    SegmentedProgressBar(currentStep: currentStep, totalSteps: 5)
+                // Segmented Progress Bar
+                if currentStep <= 5 {
+                    SegmentedProgressBar(currentStep: progressStepIndex, totalSteps: totalVisibleSteps)
                         .padding(.top, 12)
                         .padding(.bottom, 8)
                 }
@@ -44,21 +71,41 @@ struct AddSubscriptionFlowView: View {
                             selectedCategory: $category,
                             onNext: {
                                 if let preset = selectedPreset {
-                                    priceString = String(format: "%.2f", preset.defaultPrice)
-                                }
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    currentStep = 2
+                                    if preset.hasPredefinedPlans {
+                                        let defaultPlan = preset.plans.first
+                                        selectedPlanName = defaultPlan?.name ?? ""
+                                        priceString = String(format: "%.2f", defaultPlan?.defaultPrice ?? preset.defaultPrice)
+                                        billingFrequency = defaultPlan?.billingFrequency ?? .monthly
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            currentStep = 2
+                                        }
+                                    } else {
+                                        priceString = String(format: "%.2f", preset.defaultPrice)
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            currentStep = 3
+                                        }
+                                    }
+                                } else {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        currentStep = 3
+                                    }
                                 }
                             }
                         )
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                         
                     case 2:
-                        Step2CostAndBilling(
-                            priceString: $priceString,
-                            currency: $currency,
-                            billingFrequency: $billingFrequency,
+                        StepPlanSelection(
+                            serviceName: name.isEmpty ? (selectedPreset?.name ?? "Service") : name,
+                            availablePlans: selectedPreset?.plans ?? [],
+                            selectedPlanName: $selectedPlanName,
+                            customPlanName: $customPlanName,
+                            isCustomPlan: $isCustomPlan,
                             onNext: {
+                                if !isCustomPlan, let matchedPlan = selectedPreset?.plans.first(where: { $0.name == selectedPlanName }) {
+                                    priceString = String(format: "%.2f", matchedPlan.defaultPrice)
+                                    billingFrequency = matchedPlan.billingFrequency
+                                }
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     currentStep = 3
                                 }
@@ -72,9 +119,10 @@ struct AddSubscriptionFlowView: View {
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                         
                     case 3:
-                        Step3RenewalDate(
-                            renewalDate: $renewalDate,
-                            hasUnknownRenewalDate: $hasUnknownRenewalDate,
+                        Step2CostAndBilling(
+                            priceString: $priceString,
+                            currency: $currency,
+                            billingFrequency: $billingFrequency,
                             onNext: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     currentStep = 4
@@ -82,18 +130,17 @@ struct AddSubscriptionFlowView: View {
                             },
                             onBack: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
-                                    currentStep = 2
+                                    currentStep = serviceHasPlans ? 2 : 1
                                 }
                             }
                         )
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                         
                     case 4:
-                        Step4Reminders(
-                            selectedReminderOption: $selectedReminderOption,
-                            customReminderDays: $customReminderDays,
+                        Step3RenewalDate(
+                            renewalDate: $renewalDate,
+                            hasUnknownRenewalDate: $hasUnknownRenewalDate,
                             onNext: {
-                                saveSubscription()
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     currentStep = 5
                                 }
@@ -101,6 +148,24 @@ struct AddSubscriptionFlowView: View {
                             onBack: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     currentStep = 3
+                                }
+                            }
+                        )
+                        .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                        
+                    case 5:
+                        Step4Reminders(
+                            selectedReminderOption: $selectedReminderOption,
+                            customReminderDays: $customReminderDays,
+                            onNext: {
+                                saveSubscription()
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    currentStep = 6
+                                }
+                            },
+                            onBack: {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    currentStep = 4
                                 }
                             }
                         )
@@ -133,7 +198,7 @@ struct AddSubscriptionFlowView: View {
                         .foregroundColor(.renewlyTextPrimary)
                 }
                 
-                if currentStep <= 4 {
+                if currentStep <= 5 {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button("Cancel") {
                             dismiss()
@@ -159,6 +224,16 @@ struct AddSubscriptionFlowView: View {
         case .custom: reminderDays = [customReminderDays]
         }
         
+        let finalPlan: String?
+        if isCustomPlan {
+            let trimmed = customPlanName.trimmingCharacters(in: .whitespacesAndNewlines)
+            finalPlan = trimmed.isEmpty ? nil : trimmed
+        } else if !selectedPlanName.isEmpty {
+            finalPlan = selectedPlanName
+        } else {
+            finalPlan = nil
+        }
+        
         let newSub = SubscriptionModel(
             name: effectiveName,
             iconAssetName: selectedPreset?.iconAssetName,
@@ -174,7 +249,8 @@ struct AddSubscriptionFlowView: View {
             hasUnknownRenewalDate: hasUnknownRenewalDate,
             status: .active,
             reminderDays: reminderDays,
-            managementUrl: selectedPreset?.managementUrl
+            managementUrl: selectedPreset?.managementUrl,
+            planName: finalPlan
         )
         
         modelContext.insert(newSub)

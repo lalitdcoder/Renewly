@@ -326,4 +326,61 @@ struct RenewlyTests {
         #expect(sub.nextRenewalDate == nil)
         #expect(sub.renewalBadgeText() == "Not set")
     }
+    
+    @Test func testServicePlanPresetsAndLookups() throws {
+        let netflixPlans = ServicePreset.plans(for: "Netflix")
+        #expect(netflixPlans.count >= 3)
+        #expect(netflixPlans.contains(where: { $0.name == "Premium" }))
+        #expect(netflixPlans.contains(where: { $0.name == "Standard" }))
+        
+        let icloudPlans = ServicePreset.plans(for: "iCloud+")
+        #expect(icloudPlans.contains(where: { $0.name == "200 GB" }))
+        #expect(icloudPlans.contains(where: { $0.name == "2 TB" }))
+        
+        let chatgptPlans = ServicePreset.plans(for: "ChatGPT")
+        #expect(chatgptPlans.contains(where: { $0.name == "Plus" }))
+        #expect(chatgptPlans.contains(where: { $0.name == "Pro" }))
+        
+        let unknownPlans = ServicePreset.plans(for: "Unknown Service")
+        #expect(unknownPlans.isEmpty)
+    }
+    
+    @Test func testSubscriptionModelPlanFormattingAndCompatibility() throws {
+        // With plan
+        let netflixSub = SubscriptionModel(
+            name: "Netflix",
+            type: .subscription,
+            price: 17.99,
+            currency: "£",
+            billingFrequency: .monthly,
+            planName: "Premium"
+        )
+        #expect(netflixSub.hasPlan == true)
+        #expect(netflixSub.effectivePlanName == "Premium")
+        #expect(netflixSub.formattedPlanAndPrice() == "Premium · £17.99 / month")
+        
+        // Without plan (backward compatibility)
+        let legacySub = SubscriptionModel(
+            name: "Gym",
+            type: .subscription,
+            price: 35.00,
+            currency: "£",
+            billingFrequency: .monthly,
+            planName: nil
+        )
+        #expect(legacySub.hasPlan == false)
+        #expect(legacySub.effectivePlanName == nil)
+        #expect(legacySub.formattedPlanAndPrice() == "£35.00 / month")
+        
+        // Storage tier
+        let icloudSub = SubscriptionModel(
+            name: "iCloud+",
+            type: .subscription,
+            price: 2.99,
+            currency: "£",
+            billingFrequency: .monthly,
+            planName: "200 GB"
+        )
+        #expect(icloudSub.formattedPlanAndPrice() == "200 GB · £2.99 / month")
+    }
 }

@@ -17,6 +17,7 @@ struct QuickAddSubscriptionSheet: View {
     @State private var showCustomServiceInput = false
     
     // Quick Form fields
+    @State private var selectedPlanName: String = ""
     @State private var priceString: String = ""
     @State private var billingFrequency: BillingFrequency = .monthly
     @State private var renewalDate: Date = Date()
@@ -259,6 +260,48 @@ struct QuickAddSubscriptionSheet: View {
                         .stroke(Color.renewlyCardBorder, lineWidth: 1)
                 )
                 
+                // Plan Selection (if preset has predefined plans)
+                if preset.hasPredefinedPlans {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Plan / Tier")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.renewlyTextSecondary)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(preset.plans) { plan in
+                                    let isSelected = selectedPlanName == plan.name
+                                    Button(action: {
+                                        let impact = UIImpactFeedbackGenerator(style: .light)
+                                        impact.impactOccurred()
+                                        selectedPlanName = plan.name
+                                        priceString = String(format: "%.2f", plan.defaultPrice)
+                                        billingFrequency = plan.billingFrequency
+                                    }) {
+                                        HStack(spacing: 6) {
+                                            Text(plan.name)
+                                                .font(.system(size: 13, weight: .semibold))
+                                            Text(String(format: "%@%.2f", UserPreferences.shared.currency.rawValue, plan.defaultPrice))
+                                                .font(.system(size: 12))
+                                                .opacity(0.8)
+                                        }
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background(isSelected ? Color.renewlyPrimary : Color.white)
+                                        .foregroundColor(isSelected ? .white : .renewlyTextPrimary)
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(isSelected ? Color.renewlyPrimary : Color.renewlyCardBorder, lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 // Price Input
                 VStack(alignment: .leading, spacing: 6) {
                     Text("How much does it cost?")
@@ -373,7 +416,8 @@ struct QuickAddSubscriptionSheet: View {
                     .foregroundColor(.renewlyTextPrimary)
                     .multilineTextAlignment(.center)
                 
-                Text(addedSub.hasUnknownRenewalDate ? "Price: \(addedSub.currency)\(String(format: "%.2f", addedSub.price)) · Renewal date not set" : "Price: \(addedSub.currency)\(String(format: "%.2f", addedSub.price)) · Renews \(formattedDate(addedSub.nextRenewalDate))")
+                let planText = addedSub.hasPlan ? "\(addedSub.planName!) · " : ""
+                Text(addedSub.hasUnknownRenewalDate ? "\(planText)Price: \(addedSub.currency)\(String(format: "%.2f", addedSub.price)) · Renewal date not set" : "\(planText)Price: \(addedSub.currency)\(String(format: "%.2f", addedSub.price)) · Renews \(formattedDate(addedSub.nextRenewalDate))")
                     .font(.system(size: 14))
                     .foregroundColor(.renewlyTextSecondary)
             }
@@ -385,6 +429,7 @@ struct QuickAddSubscriptionSheet: View {
                         justAddedSubscription = nil
                         selectedPreset = nil
                         searchText = ""
+                        selectedPlanName = ""
                     }
                 })
                 
@@ -409,8 +454,15 @@ struct QuickAddSubscriptionSheet: View {
     // MARK: - Actions
     private func selectPreset(_ preset: ServicePreset) {
         selectedPreset = preset
-        priceString = String(format: "%.2f", preset.defaultPrice)
-        billingFrequency = .monthly
+        if let firstPlan = preset.plans.first {
+            selectedPlanName = firstPlan.name
+            priceString = String(format: "%.2f", firstPlan.defaultPrice)
+            billingFrequency = firstPlan.billingFrequency
+        } else {
+            selectedPlanName = ""
+            priceString = String(format: "%.2f", preset.defaultPrice)
+            billingFrequency = .monthly
+        }
         renewalDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
         hasUnknownRenewalDate = false
     }
@@ -449,7 +501,8 @@ struct QuickAddSubscriptionSheet: View {
             status: .active,
             reminderDays: [1, 0],
             notes: "",
-            managementUrl: preset.managementUrl
+            managementUrl: preset.managementUrl,
+            planName: selectedPlanName.isEmpty ? nil : selectedPlanName
         )
         
         modelContext.insert(sub)

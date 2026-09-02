@@ -14,6 +14,7 @@ struct SubscriptionDetailView: View {
     @Bindable var subscription: SubscriptionModel
     
     @State private var showEditSheet = false
+    @State private var showChangePlanSheet = false
     @State private var showDeleteConfirmation = false
     @State private var showCancelConfirmation = false
     @State private var calendarToastMessage: String? = nil
@@ -44,8 +45,8 @@ struct SubscriptionDetailView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                // Header Logo, Name, Price & Badges
-                VStack(spacing: 8) {
+                // Header Logo, Name, Plan, Price & Badges
+                VStack(spacing: 6) {
                     ServiceIconView(
                         name: subscription.name,
                         iconAssetName: subscription.iconAssetName,
@@ -59,6 +60,12 @@ struct SubscriptionDetailView: View {
                     Text(subscription.name)
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.renewlyTextPrimary)
+                    
+                    if let plan = subscription.effectivePlanName {
+                        Text(plan)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.renewlyTextSecondary)
+                    }
                     
                     Text(subscription.formattedPriceAndFrequency())
                         .font(.system(size: 16, weight: .bold))
@@ -89,6 +96,37 @@ struct SubscriptionDetailView: View {
                         DetailRow(label: "Next renewal", value: formattedRenewalDate)
                         Divider().background(Color.renewlyDivider).padding(.leading, 16)
                     }
+                    
+                    // Tappable Plan Row
+                    Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.impactOccurred()
+                        showChangePlanSheet = true
+                    }) {
+                        HStack {
+                            Text("Plan")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.renewlyTextSecondary)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 6) {
+                                Text(subscription.effectivePlanName ?? "Tap to set")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(subscription.hasPlan ? .renewlyTextPrimary : .renewlyPrimary)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.renewlyTextMuted)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Divider().background(Color.renewlyDivider).padding(.leading, 16)
                     
                     DetailRow(label: "Reminder", value: reminderText)
                     
@@ -284,6 +322,9 @@ struct SubscriptionDetailView: View {
         }
         .sheet(isPresented: $showEditSheet) {
             EditSubscriptionView(subscription: subscription)
+        }
+        .sheet(isPresented: $showChangePlanSheet) {
+            ChangePlanSheet(subscription: subscription)
         }
         .alert("Calendar Integration", isPresented: $showCalendarToast) {
             Button("OK", role: .cancel) {}

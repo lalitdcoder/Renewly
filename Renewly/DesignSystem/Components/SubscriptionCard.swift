@@ -43,7 +43,7 @@ struct SubscriptionCard: View {
                         }
                     }
                     
-                    Text(subscription.formattedPriceAndFrequency())
+                    Text(subscription.formattedPlanAndPrice())
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.renewlyTextSecondary)
                     

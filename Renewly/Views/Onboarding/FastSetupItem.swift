@@ -21,6 +21,7 @@ struct FastSetupItem: Identifiable, Hashable {
     var isTrial: Bool
     var priceAfterTrial: Double?
     var managementUrl: String?
+    var planName: String?
     
     init(from preset: ServicePreset, currency: String = "£") {
         let calendar = Calendar.current
@@ -34,6 +35,7 @@ struct FastSetupItem: Identifiable, Hashable {
         self.currency = currency
         self.category = preset.category
         self.managementUrl = preset.managementUrl
+        self.planName = preset.plans.first(where: { abs($0.defaultPrice - preset.defaultPrice) < 0.01 })?.name ?? preset.plans.first?.name
         
         // Smart defaults
         if preset.defaultTrialDays > 0 && preset.defaultPrice == 0 {
@@ -68,6 +70,7 @@ struct FastSetupItem: Identifiable, Hashable {
         self.isTrial = false
         self.priceAfterTrial = nil
         self.managementUrl = nil
+        self.planName = nil
     }
     
     func toSubscriptionModel() -> SubscriptionModel {
@@ -88,7 +91,8 @@ struct FastSetupItem: Identifiable, Hashable {
             status: .active,
             reminderDays: [1, 0],
             notes: "",
-            managementUrl: managementUrl
+            managementUrl: managementUrl,
+            planName: planName
         )
     }
 }

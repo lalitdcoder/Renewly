@@ -37,7 +37,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7, 3, 1],
                 notes: "Family plan",
-                managementUrl: "https://www.netflix.com/youraccount"
+                managementUrl: "https://www.netflix.com/youraccount",
+                planName: "Premium"
             ),
             SubscriptionModel(
                 name: "Spotify",
@@ -55,7 +56,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "Individual Premium",
-                managementUrl: "https://www.spotify.com/account"
+                managementUrl: "https://www.spotify.com/account",
+                planName: "Individual"
             ),
             SubscriptionModel(
                 name: "iCloud+",
@@ -73,7 +75,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "200 GB Storage",
-                managementUrl: "https://support.apple.com/HT202039"
+                managementUrl: "https://support.apple.com/HT202039",
+                planName: "200 GB"
             ),
             SubscriptionModel(
                 name: "Disney+",
@@ -91,7 +94,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "Standard with Ads",
-                managementUrl: "https://www.disneyplus.com/account"
+                managementUrl: "https://www.disneyplus.com/account",
+                planName: "Standard"
             ),
             SubscriptionModel(
                 name: "Amazon Prime Video",
@@ -109,10 +113,11 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "Monthly video streaming",
-                managementUrl: "https://www.amazon.com/mc/manage"
+                managementUrl: "https://www.amazon.com/mc/manage",
+                planName: "Prime Monthly"
             ),
             SubscriptionModel(
-                name: "Duolingo Plus",
+                name: "Duolingo",
                 iconAssetName: "Duolingo",
                 sfSymbolName: "character.book.closed.fill",
                 brandColorHex: "58CC02",
@@ -127,10 +132,11 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "Spanish learning",
-                managementUrl: "https://www.duolingo.com/settings/super"
+                managementUrl: "https://www.duolingo.com/settings/super",
+                planName: "Super Individual"
             ),
             SubscriptionModel(
-                name: "Dropbox Plus",
+                name: "Dropbox",
                 iconAssetName: nil,
                 sfSymbolName: "archivebox.fill",
                 brandColorHex: "0061FF",
@@ -145,7 +151,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7],
                 notes: "Backup drive",
-                managementUrl: "https://www.dropbox.com/account/plan"
+                managementUrl: "https://www.dropbox.com/account/plan",
+                planName: "Plus (2 TB)"
             ),
             SubscriptionModel(
                 name: "YouTube Premium",
@@ -163,7 +170,8 @@ struct SampleDataLoader {
                 status: .paused,
                 reminderDays: [7],
                 notes: "Paused for summer",
-                managementUrl: "https://www.youtube.com/paid_memberships"
+                managementUrl: "https://www.youtube.com/paid_memberships",
+                planName: "Individual"
             ),
             SubscriptionModel(
                 name: "Canva",
@@ -183,7 +191,8 @@ struct SampleDataLoader {
                 status: .active,
                 reminderDays: [7, 1],
                 notes: "Pro 14-day free trial",
-                managementUrl: "https://www.canva.com/settings/billing-and-teams"
+                managementUrl: "https://www.canva.com/settings/billing-and-teams",
+                planName: "Pro"
             )
         ]
     }

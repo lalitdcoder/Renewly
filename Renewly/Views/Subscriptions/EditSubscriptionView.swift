@@ -13,6 +13,7 @@ struct EditSubscriptionView: View {
     @Bindable var subscription: SubscriptionModel
     
     @State private var name: String = ""
+    @State private var planName: String = ""
     @State private var priceString: String = ""
     @State private var currency: String = "£"
     @State private var billingFrequency: BillingFrequency = .monthly
@@ -26,6 +27,10 @@ struct EditSubscriptionView: View {
     @State private var status: SubscriptionStatus = .active
     
     private let availableReminderDays = [14, 7, 3, 1, 0]
+    
+    private var availablePlans: [ServicePlan] {
+        ServicePreset.plans(for: name.isEmpty ? subscription.name : name)
+    }
     
     var body: some View {
         NavigationStack {
@@ -78,6 +83,39 @@ struct EditSubscriptionView: View {
                             Text(st.displayName).tag(st)
                         }
                     }
+                }
+                
+                Section("Plan / Tier") {
+                    if !availablePlans.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(availablePlans) { plan in
+                                    let isSelected = planName == plan.name
+                                    Button(action: {
+                                        planName = plan.name
+                                        if subscription.type == .subscription {
+                                            priceString = String(format: "%.2f", plan.defaultPrice)
+                                            billingFrequency = plan.billingFrequency
+                                        } else {
+                                            priceAfterTrialString = String(format: "%.2f", plan.defaultPrice)
+                                        }
+                                    }) {
+                                        Text(plan.name)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(isSelected ? Color.renewlyPrimary : Color.renewlyCardBorder.opacity(0.4))
+                                            .foregroundColor(isSelected ? .white : .renewlyTextPrimary)
+                                            .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    
+                    TextField("e.g. Premium, 200 GB, Family, Student", text: $planName)
                 }
                 
                 Section(subscription.type == .trial ? "Trial End Date" : "Renewal Date") {
@@ -156,6 +194,7 @@ struct EditSubscriptionView: View {
     
     private func loadCurrentValues() {
         name = subscription.name
+        planName = subscription.planName ?? ""
         priceString = String(format: "%.2f", subscription.price)
         currency = subscription.currency
         billingFrequency = subscription.billingFrequency
@@ -175,6 +214,8 @@ struct EditSubscriptionView: View {
     
     private func saveChanges() {
         subscription.name = name.trimmingCharacters(in: .whitespaces).isEmpty ? subscription.name : name
+        let trimmedPlan = planName.trimmingCharacters(in: .whitespacesAndNewlines)
+        subscription.planName = trimmedPlan.isEmpty ? nil : trimmedPlan
         subscription.price = Double(priceString.replacingOccurrences(of: ",", with: ".")) ?? subscription.price
         if let postVal = Double(priceAfterTrialString.replacingOccurrences(of: ",", with: ".")) {
             subscription.priceAfterTrial = postVal

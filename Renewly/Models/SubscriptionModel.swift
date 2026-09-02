@@ -29,6 +29,7 @@ final class SubscriptionModel: Identifiable {
     var reminderTime: Date
     var notes: String
     var managementUrl: String?
+    var planName: String?
     var lastReviewedAt: Date?
     var createdAt: Date
     var updatedAt: Date
@@ -54,6 +55,7 @@ final class SubscriptionModel: Identifiable {
         reminderTime: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date(),
         notes: String = "",
         managementUrl: String? = nil,
+        planName: String? = nil,
         lastReviewedAt: Date? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -67,6 +69,7 @@ final class SubscriptionModel: Identifiable {
         self.typeRaw = type.rawValue
         self.price = price
         self.currency = currency
+        self.planName = planName
         
         switch billingFrequency {
         case .monthly:
@@ -231,6 +234,20 @@ final class SubscriptionModel: Identifiable {
         }
     }
     
+    var hasPlan: Bool {
+        if let plan = planName, !plan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+        return false
+    }
+    
+    var effectivePlanName: String? {
+        guard let plan = planName?.trimmingCharacters(in: .whitespacesAndNewlines), !plan.isEmpty else {
+            return nil
+        }
+        return plan
+    }
+    
     func formattedPriceAndFrequency() -> String {
         if type == .trial {
             if let postPrice = priceAfterTrial, postPrice > 0 {
@@ -239,6 +256,14 @@ final class SubscriptionModel: Identifiable {
             return "Free Trial"
         }
         return String(format: "%@%.2f %@", currency, price, billingFrequency.shortLabel)
+    }
+    
+    func formattedPlanAndPrice() -> String {
+        let priceStr = formattedPriceAndFrequency()
+        if let plan = effectivePlanName {
+            return "\(plan) · \(priceStr)"
+        }
+        return priceStr
     }
     
     func statusSubtitle(from referenceDate: Date = Date()) -> String {

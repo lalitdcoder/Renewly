@@ -2,17 +2,16 @@
 //  RenewlyApp.swift
 //  Renewly
 //
-//  Created by Dusanapudi on 01/09/2026.
-//
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct RenewlyApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            SubscriptionModel.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
